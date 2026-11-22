@@ -1,0 +1,22 @@
+{
+  "name": "Təmir və Materiallar Kalkulyatoru",
+  "short_name": "Təmir Kalkulyator",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#1d4ed8",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192.png?text=TK",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512.png?text=TK",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
