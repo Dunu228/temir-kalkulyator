@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Təmir və Materiallar Kalkulyatoru</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #1d4ed8;
+      --primary-dark: #1e40af;
+      --accent: #0ea5e9;
+      --border: #e2e8f0;
+      --success-bg: #eff6ff;
+      --success-border: #bfdbfe;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    body { margin: 0; padding: 14px 14px 86px; background: var(--bg); color: var(--text); }
+    .app { max-width: 560px; margin: 0 auto; }
+    .header { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); color: #fff; padding: 18px; border-radius: 16px; margin-bottom: 14px; }
+    .header h1 { margin: 0 0 4px; font-size: 20px; }
+    .header p { margin: 0; font-size: 13px; opacity: 0.9; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .tab-btn { padding: 10px 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04); }
+    .section-title { font-size: 14px; font-weight: 800; margin: 0 0 12px; color: #1e293b; }
+    .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip { padding: 7px 12px; border-radius: 999px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 12px; font-weight: 700; cursor: pointer; color: #334155; }
+    .chip:active { background: #e2e8f0; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field { margin-bottom: 11px; }
+    label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; background: #fff; color: var(--text); }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:active { background: var(--primary-dark); }
+    .btn-secondary { background: #0f766e; color: #fff; }
+    .btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); margin-top: 8px; }
+    .summary-box { background: var(--success-bg); border: 1px solid var(--success-border); border-radius: 14px; padding: 14px; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed #cbd5e1; font-size: 13.5px; }
+    .row:last-child { border-bottom: none; font-weight: 800; font-size: 15.5px; color: #1e3a8a; padding-top: 10px; }
+    .room-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: #f8fafc; }
+    .room-top { display: flex; justify-content: space-between; align-items: center; font-weight: 800; margin-bottom: 4px; }
+    .del-btn { background: #fee2e2; color: #b91c1c; border: none; border-radius: 8px; padding: 4px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .pro-card { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fcd34d; border-radius: 14px; padding: 14px; margin-top: 10px; }
+    .pro-badge { display: inline-block; background: #d97706; color: #fff; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 999px; margin-bottom: 6px; }
+    .hidden { display: none; }
+    .toast { position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; z-index: 99; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+    .ad-banner { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: #e2e8f0; text-align: center; padding: 10px; font-size: 12px; border-top: 1px solid #334155; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>Təmir &amp; Materiallar Kalkulyatoru</h1>
+      <p>Otaq və mənzil smetası, material ehtiyacı və təxmini büdcə (AZN)</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-calc" onclick="switchTab('calc')">1. Hesablama</button>
+      <button class="tab-btn" id="tab-project" onclick="switchTab('project')">2. Mənzil (<span id="roomCountBadge">0</span>)</button>
+      <button class="tab-btn" id="tab-pro" onclick="switchTab('pro')">3. PRO / Alətlər</button>
+    </div>
+
+    <div id="view-calc">
+      <div class="card">
+        <div class="section-title">Hazır Otaq Şablonları</div>
+        <div class="presets">
+          <button class="chip" onclick="applyPreset('qonaq')">Qonaq otağı</button>
+          <button class="chip" onclick="applyPreset('yataq')">Yataq otağı</button>
+          <button class="chip" onclick="applyPreset('metbex')">Mətbəx</button>
+          <button class="chip" onclick="applyPreset('hamam')">Hamam / Sanuzel</button>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>Otağın adı</label>
+            <input type="text" id="roomName" value="Qonaq otağı" />
+          </div>
+          <div class="field">
+            <label>Ehtiyat payı (%)</label>
+            <input type="number" id="waste" value="10" min="0" max="50" />
+          </div>
+          <div class="field">
+            <label>Uzunluq (m)</label>
+            <input type="number" step="0.1" id="length" value="5.0" />
+          </div>
+          <div class="field">
+            <label>En (m)</label>
+            <input type="number" step="0.1" id="width" value="4.0" />
+          </div>
+          <div class="field">
+            <label>Hündürlük (m)</label>
+            <input type="number" step="0.1" id="height" value="2.8" />
+          </div>
+          <div class="field">
+            <label>Qapı/Pəncərə sahəsi (m²)</label>
+            <input type="number" step="0.1" id="openings" value="3.5" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Materiallar və Qiymətlər (AZN)</div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Döşəmə növü</label>
+            <select id="floorType" onchange="calculate()">
+              <option value="laminate">Laminat / Parket (m²)</option>
+              <option value="tile">Kafel / Metlax (qutu)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label id="floorUnitLabel">1 m² döşəmə qiyməti</label>
+            <input type="number" step="0.5" id="floorPrice" value="22" />
+          </div>
+          <div class="field" id="tilePackField" style="display:none;">
+            <label>1 qutu kafel sahəsi (m²)</label>
+            <input type="number" step="0.05" id="tilePackArea" value="1.5" />
+          </div>
+          <div class="field">
+            <label>Divar örtüyü</label>
+            <select id="wallType" onchange="calculate()">
+              <option value="wallpaper">Divar kağızı (Aboy - rulon)</option>
+              <option value="paint_putty">Boya + Şpaklyovka</option>
+            </select>
+          </div>
+          <div class="field" id="rollAreaField">
+            <label>1 rulon aboy sahəsi (m²)</label>
+            <input type="number" step="0.1" id="rollArea" value="5.0" />
+          </div>
+          <div class="field">
+            <label id="wallPriceLabel">1 rulon aboy qiyməti</label>
+            <input type="number" step="0.5" id="wallPrice" value="28" />
+          </div>
+          <div class="field">
+            <label>Tavan növü</label>
+            <select id="ceilingType" onchange="calculate()">
+              <option value="paint">Tavan boyası (litr)</option>
+              <option value="gypsum">Alçıpan / Asma tavan (list)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label id="ceilingPriceLabel">1 lt boya / 1 list qiyməti</label>
+            <input type="number" step="0.5" id="ceilingPrice" value="12" />
+          </div>
+          <div class="field">
+            <label>Plintus (1 əd = 2.5 m) qiyməti</label>
+            <input type="number" step="0.5" id="plinthPrice" value="4.5" />
+          </div>
+          <div class="field">
+            <label>Usta haqqı (1 m² döşəməyə görə)</label>
+            <input type="number" step="0.5" id="laborPerSqm" value="15" />
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="calculate()">Hesabla</button>
+          <button class="btn btn-secondary" onclick="addRoomToProject()">+ Mənzilə Əlavə Et</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Otaq üzrə Nəticə</div>
+        <div class="summary-box" id="resultBox"></div>
+        <button class="btn btn-outline" onclick="copyCurrentSummary()">Smetanı Kopyala (WhatsApp üçün)</button>
+      </div>
+    </div>
+
+    <div id="view-project" class="hidden">
+      <div class="card">
+        <div class="section-title">Mənzil üzrə Ümumi Smeta</div>
+        <div id="projectTotals" class="summary-box">Hələ otaq əlavə edilməyib.</div>
+        <button class="btn btn-outline" onclick="copyProjectSummary()">Ümumi Mənzil Smetasıni Kopyala</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Əlavə Olunmuş Otaqlar</div>
+        <div id="roomsList"></div>
+      </div>
+    </div>
+
+    <div id="view-pro" class="hidden">
+      <div class="card">
+        <div class="section-title">PRO İmkanlar və Qazanc Modeli</div>
+        <div class="pro-card">
+          <span class="pro-badge">PRO VERSİYA</span>
+          <h3 style="margin:4px 0 6px; font-size:16px;">Limitsiz Layihə və Detallı Smeta İxracı</h3>
+          <p style="margin:0 0 10px; font-size:13px; color:#451a03;">
+            Google Play-də tətbiqdaxili ödəniş (In-App Purchase) ilə açılan funksiyalar: birdən çox mənzil layihəsi, vergi/çatdırılma əlavəsi və hazır smeta şablonları.
+          </p>
+          <button class="btn btn-primary" onclick="activateProDemo()">PRO Rejimi Test Et (Pulsuz Aktivləşdir)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="ad-banner">Reklam Yeri (Google AdMob Banner — 320x50)</div>
+
+  <script>
+    let projectRooms = JSON.parse(localStorage.getItem("repair_pro_rooms") || "[]");
+    let proUnlocked = localStorage.getItem("repair_pro_unlocked") === "true";
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    function switchTab(tab) {
+      ["calc", "project", "pro"].forEach(id => {
+        document.getElementById("view-" + id).classList.toggle("hidden", id !== tab);
+        document.getElementById("tab-" + id).classList.toggle("active", id === tab);
+      });
+      if (tab === "project") renderProject();
+    }
+
+    function applyPreset(type) {
+      const presets = {
+        qonaq: { name: "Qonaq otağı", l: 5.5, w: 4.0, h: 2.9, op: 4.2, floorType: "laminate", wallType: "wallpaper", ceilingType: "paint" },
+        yataq: { name: "Yataq otağı", l: 4.2, w: 3.5, h: 2.8, op: 2.8, floorType: "laminate", wallType: "wallpaper", ceilingType: "paint" },
+        metbex: { name: "Mətbəx", l: 3.8, w: 3.0, h: 2.8, op: 2.5, floorType: "tile", wallType: "paint_putty", ceilingType: "gypsum" },
+        hamam: { name: "Hamam / Sanuzel", l: 2.4, w: 2.0, h: 2.7, op: 1.4, floorType: "tile", wallType: "paint_putty", ceilingType: "gypsum" }
+      };
+      const p = presets[type];
+      if (!p) return;
+      document.getElementById("roomName").value = p.name;
+      document.getElementById("length").value = p.l;
+      document.getElementById("width").value = p.w;
+      document.getElementById("height").value = p.h;
+      document.getElementById("openings").value = p.op;
+      document.getElementById("floorType").value = p.floorType;
+      document.getElementById("wallType").value = p.wallType;
+      document.getElementById("ceilingType").value = p.ceilingType;
+      calculate();
+      showToast(p.name + " seçildi");
+    }
+
+    function getCalcData() {
+      const name = document.getElementById("roomName").value.trim() || "Otaq";
+      const l = Math.max(0, parseFloat(document.getElementById("length").value) || 0);
+      const w = Math.max(0, parseFloat(document.getElementById("width").value) || 0);
+      const h = Math.max(0, parseFloat(document.getElementById("height").value) || 0);
+      const openings = Math.max(0, parseFloat(document.getElementById("openings").value) || 0);
+      const waste = Math.max(0, parseFloat(document.getElementById("waste").value) || 0) / 100;
+
+      const floorType = document.getElementById("floorType").value;
+      const floorPrice = Math.max(0, parseFloat(document.getElementById("floorPrice").value) || 0);
+      const tilePackArea = Math.max(0.2, parseFloat(document.getElementById("tilePackArea").value) || 1.5);
+
+      const wallType = document.getElementById("wallType").value;
+      const rollArea = Math.max(1, parseFloat(document.getElementById("rollArea").value) || 5);
+      const wallPrice = Math.max(0, parseFloat(document.getElementById("wallPrice").value) || 0);
+
+      const ceilingType = document.getElementById("ceilingType").value;
+      const ceilingPrice = Math.max(0, parseFloat(document.getElementById("ceilingPrice").value) || 0);
+
+      const plinthPrice = Math.max(0, parseFloat(document.getElementById("plinthPrice").value) || 0);
+      const laborPerSqm = Math.max(0, parseFloat(document.getElementById("laborPerSqm").value) || 0);
+
+      const baseFloor = l * w;
+      const floorQty = baseFloor * (1 + waste);
+      const tileBoxes = Math.ceil(floorQty / tilePackArea);
+      const floorCost = floorType === "tile" ? tileBoxes * floorPrice : floorQty * floorPrice;
+
+      const perimeter = 2 * (l + w);
+      const netWall = Math.max(0, perimeter * h - openings);
+      const wallQty = netWall * (1 + waste);
+      const wallRolls = Math.ceil(wallQty / rollArea);
+      const puttyBags = Math.ceil(wallQty / 10);
+      const wallCost = wallType === "wallpaper" ? wallRolls * wallPrice : wallQty * wallPrice;
+
+      const ceilingQty = baseFloor * (1 + waste);
+      const ceilingPaintLiters = Math.ceil(ceilingQty / 6);
+      const gypsumSheets = Math.ceil(ceilingQty / 3);
+      const ceilingCost = ceilingType === "paint" ? ceilingPaintLiters * ceilingPrice : gypsumSheets * ceilingPrice;
+
+      const plinthMeters = Math.max(0, perimeter - 0.9);
+      const plinthSticks = Math.ceil(plinthMeters / 2.5);
+      const plinthCost = plinthSticks * plinthPrice;
+
+      const laborCost = baseFloor * laborPerSqm;
+      const materialCost = floorCost + wallCost + ceilingCost + plinthCost;
+      const totalCost = materialCost + laborCost;
+
+      return {
+        name, floorType, baseFloor, floorQty, tileBoxes, floorCost,
+        wallType, wallQty, wallRolls, puttyBags, wallCost,
+        ceilingType, ceilingQty, ceilingPaintLiters, gypsumSheets, ceilingCost,
+        plinthMeters, plinthSticks, plinthCost,
+        laborCost, materialCost, totalCost
+      };
+    }
+
+    function calculate() {
+      const floorType = document.getElementById("floorType").value;
+      const wallType = document.getElementById("wallType").value;
+      const ceilingType = document.getElementById("ceilingType").value;
+
+      document.getElementById("tilePackField").style.display = floorType === "tile" ? "block" : "none";
+      document.getElementById("floorUnitLabel").textContent = floorType === "tile" ? "1 qutu kafel qiyməti" : "1 m² döşəmə qiyməti";
+
+      document.getElementById("rollAreaField").style.display = wallType === "wallpaper" ? "block" : "none";
+      document.getElementById("wallPriceLabel").textContent = wallType === "wallpaper" ? "1 rulon aboy qiyməti" : "1 m² divar boya/iş qiyməti";
+
+      document.getElementById("ceilingPriceLabel").textContent = ceilingType === "paint" ? "1 lt tavan boyası qiyməti" : "1 əd alçıpan listi qiyməti";
+
+      const d = getCalcData();
+      const floorText = d.floorType === "tile"
+        ? `${d.floorQty.toFixed(2)} m² (${d.tileBoxes} qutu)`
+        : `${d.floorQty.toFixed(2)} m²`;
+
+      const wallText = d.wallType === "wallpaper"
+        ? `${d.wallRolls} rulon (${d.wallQty.toFixed(1)} m²)`
+        : `${d.wallQty.toFixed(1)} m² (~${d.puttyBags} kisə şpaklyovka)`;
+
+      const ceilingText = d.ceilingType === "paint"
+        ? `${d.ceilingPaintLiters} lt boya (${d.ceilingQty.toFixed(1)} m²)`
+        : `${d.gypsumSheets} list alçıpan (${d.ceilingQty.toFixed(1)} m²)`;
+
+      document.getElementById("resultBox").innerHTML = `
+        <div class="row"><span>Döşəmə:</span><span>${floorText} — ${d.floorCost.toFixed(2)} ₼</span></div>
+        <div class="row"><span>Divar:</span><span>${wallText} — ${d.wallCost.toFixed(2)} ₼</span></div>
+        <div class="row"><span>Tavan:</span><span>${ceilingText} — ${d.ceilingCost.toFixed(2)} ₼</span></div>
+        <div class="row"><span>Plintus:</span><span>${d.plinthSticks} əd (${d.plinthMeters.toFixed(1)} m) — ${d.plinthCost.toFixed(2)} ₼</span></div>
+        <div class="row"><span>Təxmini usta haqqı:</span><span>${d.laborCost.toFixed(2)} ₼</span></div>
+        <div class="row"><span>CƏMİ (${d.name}):</span><span>${d.totalCost.toFixed(2)} ₼</span></div>
+      `;
+    }
+
+    function addRoomToProject() {
+      if (!proUnlocked && projectRooms.length >= 4) {
+        showToast("Pulsuz versiyada 4 otaq limiti var. PRO bölməsinə baxın.");
+        switchTab("pro");
+        return;
+      }
+      const d = getCalcData();
+      projectRooms.push({ id: Date.now(), ...d });
+      localStorage.setItem("repair_pro_rooms", JSON.stringify(projectRooms));
+      updateBadge();
+      showToast(d.name + " mənzil smetasına əlavə olundu");
+    }
+
+    function deleteRoom(id) {
+      projectRooms = projectRooms.filter(r => r.id !== id);
+      localStorage.setItem("repair_pro_rooms", JSON.stringify(projectRooms));
+      updateBadge();
+      renderProject();
+    }
+
+    function updateBadge() {
+      document.getElementById("roomCountBadge").textContent = projectRooms.length;
+    }
+
+    function renderProject() {
+      const listEl = document.getElementById("roomsList");
+      const totEl = document.getElementById("projectTotals");
+      if (!projectRooms.length) {
+        totEl.innerHTML = "Hələ otaq əlavə edilməyib. 'Hesablama' bölməsindən otaqları əlavə edin.";
+        listEl.innerHTML = "";
+        return;
+      }
+
+      let totalArea = 0, totalMat = 0, totalLabor = 0, grandTotal = 0;
+      projectRooms.forEach(r => {
+        totalArea += r.baseFloor;
+        totalMat += r.materialCost;
+        totalLabor += r.laborCost;
+        grandTotal += r.totalCost;
+      });
+
+      totEl.innerHTML = `
+        <div class="row"><span>Otaqların sayı:</span><span>${projectRooms.length} otaq</span></div>
+        <div class="row"><span>Ümumi döşəmə sahəsi:</span><span>${totalArea.toFixed(1)} m²</span></div>
+        <div class="row"><span>Materiallar cəmi:</span><span>${totalMat.toFixed(2)} ₼</span></div>
+        <div class="row"><span>Usta haqqı cəmi:</span><span>${totalLabor.toFixed(2)} ₼</span></div>
+        <div class="row"><span>MƏNZİL ÜMUMİ BÜDCƏ:</span><span>${grandTotal.toFixed(2)} ₼</span></div>
+      `;
+
+      listEl.innerHTML = projectRooms.map(r => `
+        <div class="room-item">
+          <div class="room-top">
+            <span>${r.name} (${r.baseFloor.toFixed(1)} m²)</span>
+            <button class="del-btn" onclick="deleteRoom(${r.id})">Sil</button>
+          </div>
+          <div style="font-size:12.5px; color:#475569;">
+            Material: ${r.materialCost.toFixed(2)} ₼ | Usta: ${r.laborCost.toFixed(2)} ₼ | <b>Cəm: ${r.totalCost.toFixed(2)} ₼</b>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function copyCurrentSummary() {
+      const d = getCalcData();
+      const txt = `TƏMİR SMETASI — ${d.name}\nSahə: ${d.baseFloor.toFixed(1)} m²\nMateriallar: ${d.materialCost.toFixed(2)} AZN\nUsta haqqı: ${d.laborCost.toFixed(2)} AZN\nYEKUN: ${d.totalCost.toFixed(2)} AZN`;
+      navigator.clipboard?.writeText(txt);
+      showToast("Smeta kopyalandı!");
+    }
+
+    function copyProjectSummary() {
+      if (!projectRooms.length) return showToast("Siyahı boşdur");
+      const sum = projectRooms.reduce((acc, r) => acc + r.totalCost, 0);
+      const lines = projectRooms.map(r => `• ${r.name}: ${r.totalCost.toFixed(2)} AZN`).join("\n");
+      const txt = `MƏNZİL ÜMUMİ SMETASI\n${lines}\n------------------\nYEKUN BÜDCƏ: ${sum.toFixed(2)} AZN`;
+      navigator.clipboard?.writeText(txt);
+      showToast("Ümumi smeta kopyalandı!");
+    }
+
+    function activateProDemo() {
+      proUnlocked = true;
+      localStorage.setItem("repair_pro_unlocked", "true");
+      showToast("PRO rejim aktivləşdi (limitsiz otaq)!");
+    }
+
+    document.querySelectorAll("input, select").forEach(el => {
+      el.addEventListener("input", calculate);
+      el.addEventListener("change", calculate);
+    });
+
+    updateBadge();
+    calculate();
+  </script>
+</body>
+</html>
